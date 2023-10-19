@@ -3,11 +3,11 @@ description: Builds a Geode mod
 
 inputs:
   sdk:
-    description: Which version of the SDK to use, defaults to latest release. Use nightly to specify latest commit
+    description: Which version of the SDK to use, defaults to latest release. Use nightly to specify latest commit [latest|nightly|vM.m.p]
     required: false
     default: latest
   cli:
-    description: Which CLI version to use, defaults to latest release.
+    description: Which CLI version to use, defaults to latest release. [latest|vM.m.p]
     required: false
     default: latest
   configure-args:
@@ -19,7 +19,7 @@ inputs:
     required: false
     default: ""
   build-config:
-    description: Which build configuration to use. Defaults to Release
+    description: Which build configuration to use. Defaults to Release [Release|RelWithDebInfo]
     required: false
     default: Release
   path:
@@ -30,8 +30,8 @@ inputs:
     description: Set this to true if you plan on merging .geode files later. See the README for more info.
     required: false
     default: false
-  platform-override:
-    description: Set this if you want to override the default platform for an OS. (available options - 'android')
+  platform:
+    description: Set this if you want to override the default build platform for an OS. [android]
     required: false
     default: ""
 
@@ -96,7 +96,7 @@ runs:
         fi
         geode sdk update $SDK_VERSION
 
-        if [ "${{ inputs.platform-override }}" = "android" ]; then
+        if [ "${{ inputs.platform }}" = "android" ]; then
           geode sdk install-binaries --platform android
         else
           geode sdk install-binaries
@@ -111,7 +111,7 @@ runs:
       with:
         ndk-version: r26b
         add-to-path: false
-      if: inputs.platform-override == 'android'
+      if: inputs.platform == 'android'
 
     - name: Setup Android Env
       shell: bash
@@ -120,20 +120,20 @@ runs:
         echo "ANDROID_ABI=armeabi-v7a" >> "$GITHUB_ENV"
         echo "MIN_SDK_VERSION=24" >> "$GITHUB_ENV"
         sudo apt install ninja-build
-      if: inputs.platform-override == 'android'
+      if: inputs.platform == 'android'
 
     - name: Run CMake and build
       id: build
       shell: bash
       run: |
         cd "${{ inputs.path }}"
-        if [ ${{ steps.platform.outputs.id }} = "win" ] && [ -z ${{ inputs.platform-override }} ]; then
+        if [ ${{ steps.platform.outputs.id }} = "win" ] && [ -z ${{ inputs.platform }} ]; then
           CMAKE_EXTRA_ARGS="-T host=x64 -A win32"
-        elif [ ${{ steps.platform.outputs.id }} = "mac" ] && [ -z ${{ inputs.platform-override }} ]; then
+        elif [ ${{ steps.platform.outputs.id }} = "mac" ] && [ -z ${{ inputs.platform }} ]; then
           CMAKE_EXTRA_ARGS="-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13"
         fi
 
-        if [ ${{ inputs.platform-override }} = "android" ]; then
+        if [ ${{ inputs.platform }} = "android" ]; then
           CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=$ANDROID_ABI -DANDROID_PLATFORM=android-$MIN_SDK_VERSION -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -G Ninja"
         fi
         cmake -B build $CMAKE_EXTRA_ARGS -DGEODE_DONT_INSTALL_MODS=On ${{ inputs.configure-args }}
