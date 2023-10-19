@@ -128,9 +128,9 @@ runs:
       run: |
         echo ${{ inputs.platform-override }}
         cd "${{ inputs.path }}"
-        if [ ${{ steps.platform.outputs.id }} = "win" ] && [ ${{ inputs.platform-override }} = "" ]; then
+        if [ ${{ steps.platform.outputs.id }} = "win" ] && [ -z ${{ inputs.platform-override }} ]; then
           CMAKE_EXTRA_ARGS="-T host=x64 -A win32"
-        elif [ ${{ steps.platform.outputs.id }} = "mac" ] && [ ${{ inputs.platform-override }} = "" ]; then
+        elif [ ${{ steps.platform.outputs.id }} = "mac" ] && [ -z ${{ inputs.platform-override }} ]; then
           CMAKE_EXTRA_ARGS="-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13"
         fi
 
