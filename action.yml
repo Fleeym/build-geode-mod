@@ -108,7 +108,7 @@ runs:
         add-to-path: false
       if: inputs.platform-override == 'android'
 
-    name: Setup Android Env
+    - name: Setup Android Env
       run: |
         echo "NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> "$GITHUB_ENV"
         echo "ANDROID_ABI=armeabi-v7a" >> "$GITHUB_ENV"
