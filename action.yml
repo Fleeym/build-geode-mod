@@ -95,7 +95,12 @@ runs:
           SDK_VERSION=${{ inputs.sdk }}
         fi
         geode sdk update $SDK_VERSION
-        geode sdk install-binaries
+
+        if [ "${{ inputs.platform-override }}" = "android" ]; then
+          geode sdk install-binaries --platform android
+        else
+          geode sdk install-binaries
+        fi
 
         export CPM_CACHE="${{ github.action_path }}/cpm-cache"
         echo "CPM_SOURCE_CACHE=$CPM_CACHE" >> $GITHUB_ENV
