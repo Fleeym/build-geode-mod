@@ -12,11 +12,15 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        # - name: Windows
-        #   os: windows-latest
+        - name: Windows
+          os: windows-latest
           
         - name: macOS
           os: macos-latest
+
+        - name: Android 
+          os: ubuntu-latest
+          platform: "android" 
 
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
@@ -28,12 +32,13 @@ jobs:
           path: textureldr
 
       - name: Build the mod
-        uses: geode-sdk/build-geode-mod@main
+        uses: fleeym/build-geode-mod@main
         with:
           sdk: nightly
           build-config: RelWithDebInfo
           path: textureldr
           combine: true
+          platform-override: ${{ matrix.config.platform }}
       
   package:
     name: Package both builds

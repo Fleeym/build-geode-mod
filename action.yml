@@ -30,6 +30,10 @@ inputs:
     description: Set this to true if you plan on merging .geode files later. See the README for more info.
     required: false
     default: false
+  platform-override:
+    description: Set this if you want to override the default platform for an OS. (available options - 'android')
+    required: false
+    default: ""
 
 outputs:
   build-output:
@@ -96,16 +100,35 @@ runs:
         export CPM_CACHE="${{ github.action_path }}/cpm-cache"
         echo "CPM_SOURCE_CACHE=$CPM_CACHE" >> $GITHUB_ENV
 
+    - name: Setup NDK
+      uses: nttld/setup-ndk@v1
+      id: setup-ndk
+      with:
+        ndk-version: r26b
+        add-to-path: false
+      if: inputs.platform-override == 'android'
+
+    name: Setup Android Env
+      run: |
+        echo "NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> "$GITHUB_ENV"
+        echo "ANDROID_ABI=armeabi-v7a" >> "$GITHUB_ENV"
+        echo "MIN_SDK_VERSION=24" >> "$GITHUB_ENV"
+        sudo apt install ninja-build
+      if: inputs.platform-override == 'android'
 
     - name: Run CMake and build
       id: build
       shell: bash
       run: |
         cd "${{ inputs.path }}"
-        if [ ${{ steps.platform.outputs.id }} = "win" ]; then
+        if [ ${{ steps.platform.outputs.id }} = "win" ] && [ ${{ inputs.platform-override }} = "" ]; then
           CMAKE_EXTRA_ARGS="-T host=x64 -A win32"
-        else
+        elif [ ${{ steps.platform.outputs.id }} = "mac" ] && [ ${{ inputs.platform-override }} = "" ]; then
           CMAKE_EXTRA_ARGS="-DCMAKE_OSX_DEPLOYMENT_TARGET=10.13"
+        fi
+
+        if [ ${{ inputs.platform-override }} = "android" ]; then
+          CMAKE_EXTRA_ARGS="$CMAKE_EXTRA_ARGS -DCMAKE_TOOLCHAIN_FILE=%NDK%/build/cmake/android.toolchain.cmake -DANDROID_ABI=$ANDROID_ABI -DANDROID_PLATFORM=android-$MIN_SDK_VERSION -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -G Ninja"
         fi
         cmake -B build $CMAKE_EXTRA_ARGS -DGEODE_DONT_INSTALL_MODS=On ${{ inputs.configure-args }}
         cmake --build build --config ${{ inputs.build-config }} ${{ inputs.build-args }}
